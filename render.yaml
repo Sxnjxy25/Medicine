@@ -21,9 +21,8 @@ services:
           property: password
 
   # React Frontend (Static Site)
-  - type: web
+  - type: static
     name: medistock-frontend
-    runtime: node
     buildCommand: npm run build
     publishPath: dist
     rootDirectory: admin-web
