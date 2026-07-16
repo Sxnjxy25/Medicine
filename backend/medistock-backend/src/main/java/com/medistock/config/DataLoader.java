@@ -32,6 +32,14 @@ public class DataLoader {
                 userRepository.save(staff);
                 System.out.println(">>> Default STAFF user created (staff / staff123)");
             }
+
+            // Print all users currently in the database to verify
+            System.out.println("==================================================");
+            System.out.println("CURRENT USERS IN DATABASE:");
+            userRepository.findAll().forEach(user -> {
+                System.out.println(" - Username: " + user.getUsername() + " | Role: " + user.getRole() + " | Password (Hashed): " + user.getPassword());
+            });
+            System.out.println("==================================================");
         };
     }
 }
