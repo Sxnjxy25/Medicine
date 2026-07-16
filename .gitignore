@@ -1,0 +1,22 @@
+# === IDE ===
+.idea/
+.vscode/
+*.iml
+
+# === Node (admin-web) ===
+node_modules/
+dist/
+.env
+.env.local
+
+# === Java / Maven (backend) ===
+target/
+*.class
+*.jar
+*.war
+*.log
+!.mvn/wrapper/maven-wrapper.jar
+
+# === OS ===
+.DS_Store
+Thumbs.db
