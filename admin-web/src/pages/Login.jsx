@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { Link } from 'react-router-dom';
 import authService from '../services/authService';
 
 export default function Login() {
@@ -125,6 +126,15 @@ export default function Login() {
             )}
           </button>
         </form>
+
+        <div style={{ textAlign: 'center', marginTop: 'var(--space-md)' }}>
+          <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--text-secondary)' }}>
+            Don't have a staff account?{' '}
+            <Link to="/register" style={{ fontWeight: '500', color: 'var(--accent-primary)' }}>
+              Create one
+            </Link>
+          </p>
+        </div>
 
         <p style={{ textAlign: 'center', marginTop: 'var(--space-lg)', fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>
           MediStock v1.0 — Medicine Stock Management

@@ -2,6 +2,7 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Layout from '../components/Layout';
 import Login from '../pages/Login';
+import Register from '../pages/Register';
 import Dashboard from '../pages/Dashboard';
 import Medicines from '../pages/Medicines';
 import AddMedicine from '../pages/AddMedicine';
@@ -31,8 +32,9 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 export default function AppRoutes() {
   return (
     <Routes>
-      {/* Public Route */}
+      {/* Public Routes */}
       <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
 
       {/* Protected Routes wrapped in Layout */}
       <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
