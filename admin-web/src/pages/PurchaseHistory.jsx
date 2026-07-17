@@ -157,8 +157,8 @@ export default function PurchaseHistory() {
           title={editingPurchase ? 'Edit Purchase Order' : 'Create Purchase Order'} 
           onClose={() => setShowModal(false)}
         >
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-            <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
+            <div className="form-grid">
               <div className="form-group">
                 <label className="form-label">PO / Invoice Number</label>
                 <input
@@ -180,9 +180,6 @@ export default function PurchaseHistory() {
                   required
                 />
               </div>
-            </div>
-
-            <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
               <div className="form-group">
                 <label className="form-label">Purchase Date</label>
                 <input
@@ -205,9 +202,6 @@ export default function PurchaseHistory() {
                   required
                 />
               </div>
-            </div>
-
-            <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
               <div className="form-group">
                 <label className="form-label">Purchase Status</label>
                 <select
@@ -233,7 +227,7 @@ export default function PurchaseHistory() {
               </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: 'var(--space-md)' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: 'var(--space-md)' }}>
               <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
                 Cancel
               </button>
