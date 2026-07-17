@@ -3,6 +3,7 @@ import { Store, User, Bell, Save, Users, UserPlus, Trash2 } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import authService from '../services/authService';
 import { useAuth } from '../context/AuthContext';
+import Modal from '../components/Modal';
 
 const settingsSections = [
   { key: 'store', label: 'Store Profile', icon: Store },
@@ -16,6 +17,7 @@ export default function Settings() {
   const [activeSection, setActiveSection] = useState('store');
   const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState([]);
+  const [confirmDeleteTarget, setConfirmDeleteTarget] = useState(null);
   const [staffForm, setStaffForm] = useState({ username: '', password: '' });
   const [accountForm, setAccountForm] = useState({ currentPassword: '', newPassword: '' });
   const toast = useToast();
@@ -311,20 +313,7 @@ export default function Settings() {
                             <button
                               className="btn btn-danger btn-sm"
                               title="Delete staff account"
-                              onClick={async () => {
-                                if (window.confirm(`Are you sure you want to remove staff member '${u.username}'?`)) {
-                                  try {
-                                    setLoading(true);
-                                    await authService.deleteUser(u.id);
-                                    toast.success('Removed', `Staff account '${u.username}' has been deleted.`);
-                                    fetchUsers();
-                                  } catch (err) {
-                                    toast.error('Deletion Failed', 'Could not delete staff user.');
-                                  } finally {
-                                    setLoading(false);
-                                  }
-                                }
-                              }}
+                              onClick={() => setConfirmDeleteTarget(u)}
                             >
                               <Trash2 size={14} /> Remove
                             </button>
@@ -347,6 +336,49 @@ export default function Settings() {
           </div>
         </div>
       </div>
+
+      {/* Custom Confirmation Modal */}
+      <Modal
+        open={confirmDeleteTarget !== null}
+        onClose={() => setConfirmDeleteTarget(null)}
+        title="Remove Staff Account"
+        footer={
+          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+            <button 
+              className="btn btn-secondary" 
+              onClick={() => setConfirmDeleteTarget(null)}
+              disabled={loading}
+            >
+              Cancel
+            </button>
+            <button 
+              className="btn btn-danger" 
+              onClick={async () => {
+                if (!confirmDeleteTarget) return;
+                setLoading(true);
+                try {
+                  await authService.deleteUser(confirmDeleteTarget.id);
+                  toast.success('Removed', `Staff account '${confirmDeleteTarget.username}' has been deleted.`);
+                  fetchUsers();
+                } catch (err) {
+                  toast.error('Deletion Failed', 'Could not delete staff user.');
+                } finally {
+                  setLoading(false);
+                  setConfirmDeleteTarget(null);
+                }
+              }}
+              disabled={loading}
+            >
+              {loading ? 'Removing...' : 'Remove User'}
+            </button>
+          </div>
+        }
+      >
+        <p style={{ margin: 0, fontSize: 'var(--font-size-md)', color: 'var(--text-secondary)' }}>
+          Are you sure you want to remove staff member <strong>'{confirmDeleteTarget?.username}'</strong>? 
+          This will permanently delete this account.
+        </p>
+      </Modal>
     </div>
   );
 }
