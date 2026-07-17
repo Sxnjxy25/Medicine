@@ -12,6 +12,14 @@ const authService = {
   changePassword: async (username, currentPassword, newPassword) => {
     const response = await api.post('/auth/change-password', { username, currentPassword, newPassword });
     return response.data;
+  },
+  getAllUsers: async () => {
+    const response = await api.get('/auth/users');
+    return response.data;
+  },
+  deleteUser: async (id) => {
+    const response = await api.delete(`/auth/users/${id}`);
+    return response.data;
   }
 };
 

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Store, User, Bell, Save, Users, UserPlus } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Store, User, Bell, Save, Users, UserPlus, Trash2 } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import authService from '../services/authService';
 import { useAuth } from '../context/AuthContext';
@@ -15,9 +15,25 @@ export default function Settings() {
   const { user } = useAuth();
   const [activeSection, setActiveSection] = useState('store');
   const [loading, setLoading] = useState(false);
+  const [users, setUsers] = useState([]);
   const [staffForm, setStaffForm] = useState({ username: '', password: '' });
   const [accountForm, setAccountForm] = useState({ currentPassword: '', newPassword: '' });
   const toast = useToast();
+
+  const fetchUsers = async () => {
+    try {
+      const data = await authService.getAllUsers();
+      setUsers(data);
+    } catch (err) {
+      console.error('Failed to fetch users list', err);
+    }
+  };
+
+  useEffect(() => {
+    if (activeSection === 'staff') {
+      fetchUsers();
+    }
+  }, [activeSection]);
 
   const [storeForm, setStoreForm] = useState(() => {
     const saved = localStorage.getItem('store_settings');
@@ -208,7 +224,7 @@ export default function Settings() {
                 <h3 className="card-title">Manage Staff</h3>
               </div>
               <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)', marginBottom: 'var(--space-md)' }}>
-                Create new staff accounts. Staff can access the dashboard and billing but cannot access reports or settings.
+                Create and manage staff accounts. Staff can access the dashboard and billing but cannot access reports or settings.
               </p>
               
               <div className="card" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-color)', marginBottom: 'var(--space-xl)' }}>
@@ -229,6 +245,7 @@ export default function Settings() {
                        await authService.registerStaff(staffForm.username, staffForm.password);
                        toast.success('Staff Created', `Staff account '${staffForm.username}' has been successfully created.`);
                        setStaffForm({ username: '', password: '' });
+                       fetchUsers(); // Refresh list
                     } catch (err) {
                        toast.error('Creation Failed', err.response?.data || 'Failed to create staff account.');
                     } finally {
@@ -262,6 +279,63 @@ export default function Settings() {
                     </button>
                   </div>
                 </form>
+              </div>
+
+              {/* Registered Users List */}
+              <div className="card" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-color)' }}>
+                <h4 style={{ marginBottom: 'var(--space-md)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Users size={18} color="var(--color-success)" />
+                  Registered Accounts
+                </h4>
+                <table className="data-table" style={{ width: '100%' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: 'left' }}>Username</th>
+                      <th style={{ textAlign: 'left' }}>Role</th>
+                      <th style={{ textAlign: 'center', width: '100px' }}>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.map((u) => (
+                      <tr key={u.id}>
+                        <td>
+                          <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{u.username}</span>
+                        </td>
+                        <td>
+                          <span className={`badge ${u.role === 'ADMIN' ? 'badge-info' : 'badge-warning'}`}>
+                            {u.role}
+                          </span>
+                        </td>
+                        <td style={{ textAlign: 'center' }}>
+                          {u.role !== 'ADMIN' ? (
+                            <button
+                              className="btn btn-danger btn-sm"
+                              title="Delete staff account"
+                              onClick={async () => {
+                                if (window.confirm(`Are you sure you want to remove staff member '${u.username}'?`)) {
+                                  try {
+                                    setLoading(true);
+                                    await authService.deleteUser(u.id);
+                                    toast.success('Removed', `Staff account '${u.username}' has been deleted.`);
+                                    fetchUsers();
+                                  } catch (err) {
+                                    toast.error('Deletion Failed', 'Could not delete staff user.');
+                                  } finally {
+                                    setLoading(false);
+                                  }
+                                }
+                              }}
+                            >
+                              <Trash2 size={14} /> Remove
+                            </button>
+                          ) : (
+                            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Protected</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </>
           )}
