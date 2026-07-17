@@ -12,4 +12,8 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    outDir: '../backend/medistock-backend/src/main/resources/static',
+    emptyOutDir: true,
+  },
 });
