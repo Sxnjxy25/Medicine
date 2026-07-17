@@ -1,0 +1,19 @@
+{
+  "name": "MediStock Workspace",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspace",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
+    }
+  },
+  "forwardPorts": [8080, 5432],
+  "portsAttributes": {
+    "8080": {
+      "label": "MediStock Web Application",
+      "onAutoForward": "openBrowser"
+    }
+  },
+  "postCreateCommand": "cd admin-web && npm install"
+}
