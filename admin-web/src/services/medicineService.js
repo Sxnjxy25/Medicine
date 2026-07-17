@@ -3,7 +3,8 @@ import api from './api';
 const medicineService = {
   getAll: async () => {
     const response = await api.get('/medicines');
-    return response.data;
+    // Only return active medicines (filter out soft-deleted/inactive ones)
+    return response.data.filter(m => m.active !== false);
   },
 
   getAllMedicines: async () => {
@@ -12,7 +13,7 @@ const medicineService = {
 
   getLowStockMedicines: async () => {
     const medicines = await medicineService.getAll();
-    // Return medicines where quantity (stock) is less than minimumStock or fallback of 50
+    // Return active medicines where quantity (stock) is less than minimumStock or fallback of 50
     return medicines.filter((m) => m.quantity < (m.minimumStock || 50));
   },
 
