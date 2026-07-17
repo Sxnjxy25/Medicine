@@ -9,6 +9,7 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  History,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -19,6 +20,7 @@ const navItems = [
   { path: '/stock', label: 'Stock', icon: Package },
   { section: 'Transactions' },
   { path: '/billing', label: 'Billing', icon: Receipt },
+  { path: '/sales-history', label: 'Sales History', icon: History },
   { path: '/purchases', label: 'Purchase History', icon: ShoppingCart },
   { section: 'Analytics' },
   { path: '/reports', label: 'Reports', icon: BarChart3 },
@@ -38,7 +40,7 @@ export default function Sidebar({ collapsed, onToggle }) {
       }
     }
     if (user?.role === 'STAFF') {
-      // Hide Purchases, Reports, Settings, and Analytics section labels for staff accounts
+      // Hide Purchases, Reports, and Settings for staff accounts (they can see Billing and Sales History)
       if (item.path === '/purchases' || item.path === '/reports' || item.path === '/settings') {
         return false;
       }

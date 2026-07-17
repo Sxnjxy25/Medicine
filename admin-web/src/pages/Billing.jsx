@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Plus, Minus, Trash2, Receipt, Printer } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import medicineService from '../services/medicineService';
+import salesService from '../services/salesService';
 
 export default function Billing() {
   const [cart, setCart] = useState([]);
@@ -86,6 +87,26 @@ export default function Billing() {
       return;
     }
     try {
+      // Create a sale record in the database
+      const invoiceNumber = `INV-${Date.now().toString().slice(-6)}`;
+      const saleData = {
+        invoiceNumber,
+        customerName,
+        subtotal,
+        gst: gstTotal,
+        grandTotal,
+        paymentMode: 'Cash', // Default payment mode
+        items: cart.map(item => ({
+          medicineName: item.name,
+          quantity: item.qty,
+          price: item.price,
+          subtotal: item.price * item.qty
+        }))
+      };
+      
+      await salesService.create(saleData);
+
+      // Deduct medicine quantities from database
       for (const item of cart) {
         const dbMed = allMedicines.find(m => m.id === item.id);
         if (dbMed) {
@@ -96,13 +117,15 @@ export default function Billing() {
           });
         }
       }
-      toast.success('Bill Generated', `Invoice for ${customerName} — ₹${grandTotal.toFixed(2)}`);
+      
+      toast.success('Bill Generated & Saved', `Invoice ${invoiceNumber} for ${customerName} — ₹${grandTotal.toFixed(2)}`);
       const meds = await medicineService.getAllMedicines();
       setAllMedicines(meds);
       setCart([]);
       setCustomerName('');
     } catch (err) {
-      toast.error('Billing Error', 'Failed to update stock quantities.');
+      console.error(err);
+      toast.error('Billing Error', 'Failed to save sale or update stock.');
     }
   };
 

@@ -10,6 +10,7 @@ import UpdateMedicine from '../pages/UpdateMedicine';
 import Stock from '../pages/Stock';
 import Billing from '../pages/Billing';
 import PurchaseHistory from '../pages/PurchaseHistory';
+import SalesHistory from '../pages/SalesHistory';
 import Reports from '../pages/Reports';
 import Settings from '../pages/Settings';
 
@@ -42,6 +43,7 @@ export default function AppRoutes() {
         <Route path="/medicines" element={<Medicines />} />
         <Route path="/stock" element={<Stock />} />
         <Route path="/billing" element={<ProtectedRoute allowedRoles={['STAFF']}><Billing /></ProtectedRoute>} />
+        <Route path="/sales-history" element={<SalesHistory />} />
         <Route path="/purchases" element={<ProtectedRoute allowedRoles={['ADMIN']}><PurchaseHistory /></ProtectedRoute>} />
         
         {/* Admin only routes (optional example) */}
