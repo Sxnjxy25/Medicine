@@ -31,8 +31,11 @@ public class MedicineService {
         return medicineRepository.save(medicine);
     }
 
-    // Delete medicine
+    // Soft delete medicine
     public void deleteMedicine(Integer id) {
-        medicineRepository.deleteById(id);
+        medicineRepository.findById(id).ifPresent(medicine -> {
+            medicine.setActive(false);
+            medicineRepository.save(medicine);
+        });
     }
 }

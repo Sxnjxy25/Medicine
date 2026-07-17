@@ -35,6 +35,7 @@ export default function Billing() {
   }, []);
 
   const filteredMedicines = allMedicines.filter(m => 
+    m.active !== false &&
     m.medicineName && m.medicineName.toLowerCase().includes(searchMed.toLowerCase())
   );
 
