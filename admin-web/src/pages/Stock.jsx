@@ -11,7 +11,7 @@ export default function Stock() {
 
   useEffect(() => {
     medicineService.getAllMedicines()
-      .then((data) => setMedicines(data))
+      .then((data) => setMedicines(data.filter(m => m.active !== false)))
       .catch((err) => {
         console.error('Failed to load stock data', err);
       })
