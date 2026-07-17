@@ -164,7 +164,7 @@ export default function Reports() {
   const getExpiryAlerts = () => {
     // Generate alerts for low stock medicines from database
     return medicines
-      .filter(m => m.quantity < (m.minimumStock || 10))
+      .filter(m => m.active !== false && m.quantity < (m.minimumStock || 10))
       .map(m => ({
         name: m.medicineName,
         company: m.manufacturer || 'General',

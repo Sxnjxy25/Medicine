@@ -16,11 +16,12 @@ export default function Dashboard() {
     // Try to get real medicine count from backend
     medicineService.getAllMedicines()
       .then((data) => {
-        setMedicines(data);
+        const activeMeds = data.filter(m => m.active !== false);
+        setMedicines(activeMeds);
         setStats((s) => ({
           ...s,
-          totalMedicines: data.length,
-          lowStockAlerts: data.filter((m) => m.quantity < (m.minimumStock || 50)).length,
+          totalMedicines: activeMeds.length,
+          lowStockAlerts: activeMeds.filter((m) => m.quantity < (m.minimumStock || 50)).length,
         }));
       })
       .catch((err) => {
