@@ -20,6 +20,10 @@ const authService = {
   deleteUser: async (id) => {
     const response = await api.delete(`/auth/users/${id}`);
     return response.data;
+  },
+  resetStaffPassword: async (id, password) => {
+    const response = await api.put(`/auth/users/${id}/password`, { password });
+    return response.data;
   }
 };
 

@@ -18,6 +18,8 @@ export default function Settings() {
   const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState([]);
   const [confirmDeleteTarget, setConfirmDeleteTarget] = useState(null);
+  const [resetPasswordTarget, setResetPasswordTarget] = useState(null);
+  const [newStaffPassword, setNewStaffPassword] = useState('');
   const [staffForm, setStaffForm] = useState({ username: '', password: '' });
   const [accountForm, setAccountForm] = useState({ currentPassword: '', newPassword: '' });
   const toast = useToast();
@@ -294,7 +296,8 @@ export default function Settings() {
                     <tr>
                       <th style={{ textAlign: 'left' }}>Username</th>
                       <th style={{ textAlign: 'left' }}>Role</th>
-                      <th style={{ textAlign: 'center', width: '100px' }}>Action</th>
+                      <th style={{ textAlign: 'left' }}>Password Status</th>
+                      <th style={{ textAlign: 'center', width: '220px' }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -308,15 +311,30 @@ export default function Settings() {
                             {u.role}
                           </span>
                         </td>
+                        <td>
+                          <span style={{ fontFamily: 'monospace', color: 'var(--text-muted)' }}>•••••••• (BCrypt Secure)</span>
+                        </td>
                         <td style={{ textAlign: 'center' }}>
                           {u.role !== 'ADMIN' ? (
-                            <button
-                              className="btn btn-danger btn-sm"
-                              title="Delete staff account"
-                              onClick={() => setConfirmDeleteTarget(u)}
-                            >
-                              <Trash2 size={14} /> Remove
-                            </button>
+                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                              <button
+                                className="btn btn-secondary btn-sm"
+                                title="Reset staff password"
+                                onClick={() => {
+                                  setNewStaffPassword('');
+                                  setResetPasswordTarget(u);
+                                }}
+                              >
+                                🔑 Reset
+                              </button>
+                              <button
+                                className="btn btn-danger btn-sm"
+                                title="Delete staff account"
+                                onClick={() => setConfirmDeleteTarget(u)}
+                              >
+                                <Trash2 size={14} /> Remove
+                              </button>
+                            </div>
                           ) : (
                             <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Protected</span>
                           )}
@@ -378,6 +396,62 @@ export default function Settings() {
           Are you sure you want to remove staff member <strong>'{confirmDeleteTarget?.username}'</strong>? 
           This will permanently delete this account.
         </p>
+      </Modal>
+
+      {/* Custom Reset Password Modal */}
+      <Modal
+        open={resetPasswordTarget !== null}
+        onClose={() => setResetPasswordTarget(null)}
+        title="Reset Staff Password"
+        footer={
+          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+            <button 
+              className="btn btn-secondary" 
+              onClick={() => setResetPasswordTarget(null)}
+              disabled={loading}
+            >
+              Cancel
+            </button>
+            <button 
+              className="btn btn-primary" 
+              onClick={async () => {
+                if (!resetPasswordTarget || !newStaffPassword.trim()) {
+                  toast.error('Validation Error', 'Password cannot be empty.');
+                  return;
+                }
+                setLoading(true);
+                try {
+                  await authService.resetStaffPassword(resetPasswordTarget.id, newStaffPassword);
+                  toast.success('Success', `Password for '${resetPasswordTarget.username}' has been updated.`);
+                  setResetPasswordTarget(null);
+                } catch (err) {
+                  toast.error('Reset Failed', err.response?.data || 'Could not reset password.');
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              disabled={loading}
+            >
+              {loading ? 'Updating...' : 'Update Password'}
+            </button>
+          </div>
+        }
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <p style={{ margin: 0, fontSize: 'var(--font-size-md)', color: 'var(--text-secondary)' }}>
+            Enter a new password for staff member <strong>'{resetPasswordTarget?.username}'</strong>:
+          </p>
+          <div className="form-group" style={{ margin: 0 }}>
+            <label className="form-label">New Password</label>
+            <input 
+              className="form-input" 
+              type="password"
+              placeholder="Enter new password"
+              value={newStaffPassword}
+              onChange={(e) => setNewStaffPassword(e.target.value)}
+            />
+          </div>
+        </div>
       </Modal>
     </div>
   );

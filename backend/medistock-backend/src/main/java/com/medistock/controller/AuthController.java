@@ -92,4 +92,19 @@ public class AuthController {
         userRepository.delete(user);
         return ResponseEntity.ok("User deleted successfully");
     }
+
+    @PutMapping("/users/{id}/password")
+    public ResponseEntity<?> resetStaffPassword(@PathVariable Integer id, @RequestBody AuthRequest request) {
+        Optional<User> optionalUser = userRepository.findById(id);
+        if (optionalUser.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        User user = optionalUser.get();
+        if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Password cannot be empty");
+        }
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        userRepository.save(user);
+        return ResponseEntity.ok("Staff password has been reset successfully");
+    }
 }
