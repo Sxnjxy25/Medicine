@@ -18,7 +18,8 @@ export default function Medicines() {
     setLoading(true);
     try {
       const data = await medicineService.getAll();
-      setMedicines(data);
+      // Only display medicines that are active (not soft-deleted)
+      setMedicines(data.filter(m => m.active !== false));
     } catch (err) {
       toast.error('Failed to load', 'Could not fetch medicines from server. Is the backend running?');
     } finally {
