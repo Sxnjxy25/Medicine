@@ -10,6 +10,7 @@ export default function PurchaseHistory() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingPurchase, setEditingPurchase] = useState(null);
+  const [confirmDeleteTarget, setConfirmDeleteTarget] = useState(null);
   const [form, setForm] = useState({ invoiceNumber: '', supplier: '', date: '', items: '', total: '', status: 'Delivered' });
   const toast = useToast();
 
@@ -54,10 +55,9 @@ export default function PurchaseHistory() {
     setShowModal(true);
   };
 
-  const handleDeleteClick = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this purchase order?')) return;
+  const handleDeleteClick = async (purchase) => {
     try {
-      await purchaseService.delete(id);
+      await purchaseService.delete(purchase.id);
       toast.success('Deleted', 'Purchase record deleted successfully.');
       loadPurchases();
     } catch (err) {
@@ -120,7 +120,7 @@ export default function PurchaseHistory() {
           <button className="btn btn-ghost btn-sm" onClick={() => handleEditClick(row)} title="Edit Purchase">
             <Edit2 size={14} color="var(--accent-secondary)" />
           </button>
-          <button className="btn btn-ghost btn-sm" onClick={() => handleDeleteClick(row.id)} title="Delete Purchase">
+          <button className="btn btn-ghost btn-sm" onClick={() => setConfirmDeleteTarget(row)} title="Delete Purchase">
             <Trash2 size={14} color="var(--color-danger)" />
           </button>
         </div>
@@ -242,6 +242,37 @@ export default function PurchaseHistory() {
               </button>
             </div>
           </form>
+        </Modal>
+      )}
+      {confirmDeleteTarget && (
+        <Modal
+          open={confirmDeleteTarget !== null}
+          onClose={() => setConfirmDeleteTarget(null)}
+          title="Delete Purchase Record"
+          footer={
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <button 
+                className="btn btn-secondary" 
+                onClick={() => setConfirmDeleteTarget(null)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn btn-danger" 
+                onClick={async () => {
+                  await handleDeleteClick(confirmDeleteTarget);
+                  setConfirmDeleteTarget(null);
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          }
+        >
+          <p style={{ margin: 0, fontSize: 'var(--font-size-md)', color: 'var(--text-secondary)' }}>
+            Are you sure you want to delete purchase order <strong>'{confirmDeleteTarget.invoiceNumber}'</strong>?
+            This will permanently remove this record from your purchase history.
+          </p>
         </Modal>
       )}
     </div>
