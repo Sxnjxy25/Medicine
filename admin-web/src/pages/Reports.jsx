@@ -1,7 +1,10 @@
-import { useState } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, LineChart, Line } from 'recharts';
+import { useEffect, useState } from 'react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Calendar, TrendingUp, ShoppingBag, AlertTriangle, Printer } from 'lucide-react';
-import { reportsData } from '../services/mockData';
+import salesService from '../services/salesService';
+import purchaseService from '../services/purchaseService';
+import medicineService from '../services/medicineService';
+import { useToast } from '../context/ToastContext';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
@@ -16,51 +19,44 @@ const CustomTooltip = ({ active, payload, label }) => {
       <p style={{ color: 'var(--text-primary)', fontWeight: 600, marginBottom: 4 }}>{label}</p>
       {payload.map((entry, i) => (
         <p key={i} style={{ color: entry.color, fontSize: '13px' }}>
-          {entry.name}: ₹{entry.value.toLocaleString()}
+          {entry.name}: ₹{entry.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </p>
       ))}
     </div>
   );
 };
 
-const weeklySalesData = [
-  { month: 'Mon', revenue: 15000, cost: 10000, profit: 5000 },
-  { month: 'Tue', revenue: 18000, cost: 12000, profit: 6000 },
-  { month: 'Wed', revenue: 14000, cost: 9500, profit: 4500 },
-  { month: 'Thu', revenue: 22000, cost: 15000, profit: 7000 },
-  { month: 'Fri', revenue: 25000, cost: 17000, profit: 8000 },
-  { month: 'Sat', revenue: 30000, cost: 20000, profit: 10000 },
-  { month: 'Sun', revenue: 12000, cost: 8000, profit: 4000 },
-];
-
-const monthlyPurchasesData = [
-  { month: 'Jan', expense: 98000, items: 120 },
-  { month: 'Feb', expense: 89000, items: 110 },
-  { month: 'Mar', expense: 112000, items: 140 },
-  { month: 'Apr', expense: 105000, items: 130 },
-  { month: 'May', expense: 118000, items: 150 },
-  { month: 'Jun', expense: 114000, items: 145 },
-];
-
-const weeklyPurchasesData = [
-  { month: 'Mon', expense: 12000, items: 15 },
-  { month: 'Tue', expense: 8000, items: 10 },
-  { month: 'Wed', expense: 15000, items: 20 },
-  { month: 'Thu', expense: 22000, items: 30 },
-  { month: 'Fri', expense: 5000, items: 8 },
-  { month: 'Sat', expense: 0, items: 0 },
-  { month: 'Sun', expense: 0, items: 0 },
-];
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export default function Reports() {
+  const [sales, setSales] = useState([]);
+  const [purchases, setPurchases] = useState([]);
+  const [medicines, setMedicines] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('sales');
   const [timeframe, setTimeframe] = useState('monthly'); // 'monthly' or 'weekly'
+  const toast = useToast();
 
-  const tabs = [
-    { key: 'sales', label: 'Sales Report', icon: TrendingUp },
-    { key: 'purchases', label: 'Purchases Report', icon: ShoppingBag },
-    { key: 'expiry', label: 'Expiry Alerts', icon: AlertTriangle },
-  ];
+  useEffect(() => {
+    const loadAllData = async () => {
+      try {
+        const [salesData, purchasesData, medsData] = await Promise.all([
+          salesService.getAll(),
+          purchaseService.getAll(),
+          medicineService.getAll()
+        ]);
+        setSales(salesData);
+        setPurchases(purchasesData);
+        setMedicines(medsData);
+      } catch (err) {
+        toast.error('Data Load Error', 'Failed to retrieve database analytics.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadAllData();
+  }, []);
 
   const storeSettings = JSON.parse(localStorage.getItem('store_settings')) || {
     name: 'MediStock Pharmacy & Medicals',
@@ -71,8 +67,117 @@ export default function Reports() {
     licenseNumber: 'DL-90210/26',
   };
 
-  const salesData = timeframe === 'monthly' ? reportsData.monthlySales : weeklySalesData;
-  const purchasesData = timeframe === 'monthly' ? monthlyPurchasesData : weeklyPurchasesData;
+  const tabs = [
+    { key: 'sales', label: 'Sales Report', icon: TrendingUp },
+    { key: 'purchases', label: 'Purchases Report', icon: ShoppingBag },
+    { key: 'expiry', label: 'Expiry Alerts', icon: AlertTriangle },
+  ];
+
+  // --- SALES DATA COMPUTATION ---
+  const getSalesData = () => {
+    if (timeframe === 'monthly') {
+      // Group by month
+      const monthlyGroups = MONTH_NAMES.map(m => ({ month: m, revenue: 0, cost: 0, profit: 0 }));
+      sales.forEach(sale => {
+        const date = new Date(sale.saleDate);
+        if (date.getFullYear() === new Date().getFullYear()) {
+          const monthIndex = date.getMonth();
+          monthlyGroups[monthIndex].revenue += sale.grandTotal || 0;
+          monthlyGroups[monthIndex].cost += sale.subtotal * 0.7; // Estimate operational cost as 70%
+          monthlyGroups[monthIndex].profit += (sale.grandTotal || 0) - (sale.subtotal * 0.7);
+        }
+      });
+      return monthlyGroups;
+    } else {
+      // Group by day of current week
+      const weeklyGroups = WEEKDAYS.map(d => ({ month: d, revenue: 0, cost: 0, profit: 0 }));
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+      
+      sales.forEach(sale => {
+        const date = new Date(sale.saleDate);
+        if (date >= oneWeekAgo) {
+          const dayIndex = date.getDay();
+          weeklyGroups[dayIndex].revenue += sale.grandTotal || 0;
+          weeklyGroups[dayIndex].cost += sale.subtotal * 0.7;
+          weeklyGroups[dayIndex].profit += (sale.grandTotal || 0) - (sale.subtotal * 0.7);
+        }
+      });
+      return weeklyGroups;
+    }
+  };
+
+  // --- PURCHASES DATA COMPUTATION ---
+  const getPurchasesData = () => {
+    if (timeframe === 'monthly') {
+      const monthlyGroups = MONTH_NAMES.map(m => ({ month: m, expense: 0, items: 0 }));
+      purchases.forEach(p => {
+        const date = new Date(p.date);
+        if (date.getFullYear() === new Date().getFullYear()) {
+          const monthIndex = date.getMonth();
+          monthlyGroups[monthIndex].expense += p.total || 0;
+          // Count items in description (parse comma-separated items list)
+          const itemsCount = p.items ? p.items.split(',').length : 0;
+          monthlyGroups[monthIndex].items += itemsCount;
+        }
+      });
+      return monthlyGroups;
+    } else {
+      const weeklyGroups = WEEKDAYS.map(d => ({ month: d, expense: 0, items: 0 }));
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+      purchases.forEach(p => {
+        const date = new Date(p.date);
+        if (date >= oneWeekAgo) {
+          const dayIndex = date.getDay();
+          weeklyGroups[dayIndex].expense += p.total || 0;
+          const itemsCount = p.items ? p.items.split(',').length : 0;
+          weeklyGroups[dayIndex].items += itemsCount;
+        }
+      });
+      return weeklyGroups;
+    }
+  };
+
+  // --- TOP SELLING MEDICINES COMPUTATION ---
+  const getTopSellingMedicines = () => {
+    const medSalesMap = {};
+    sales.forEach(sale => {
+      if (sale.items) {
+        sale.items.forEach(item => {
+          if (!medSalesMap[item.medicineName]) {
+            medSalesMap[item.medicineName] = { name: item.medicineName, units: 0, revenue: 0 };
+          }
+          medSalesMap[item.medicineName].units += item.quantity || 0;
+          medSalesMap[item.medicineName].revenue += item.subtotal || 0;
+        });
+      }
+    });
+
+    return Object.values(medSalesMap)
+      .sort((a, b) => b.units - a.units)
+      .slice(0, 5); // Limit to top 5
+  };
+
+  // --- EXPIRY ALERTS COMPUTATION ---
+  const getExpiryAlerts = () => {
+    // Generate alerts for low stock medicines from database
+    return medicines
+      .filter(m => m.quantity < (m.minimumStock || 10))
+      .map(m => ({
+        name: m.medicineName,
+        company: m.manufacturer || 'General',
+        batch: m.medicineCode || 'N/A',
+        expiry: 'Low Stock Alert',
+        qty: m.quantity,
+      }));
+  };
+
+  const salesData = getSalesData();
+  const purchasesData = getPurchasesData();
+  const topSellingMeds = getTopSellingMedicines();
+  const expiryAlerts = getExpiryAlerts();
 
   // Structured calculations for summary
   const totalSalesRevenue = salesData.reduce((sum, r) => sum + r.revenue, 0);
@@ -84,17 +189,23 @@ export default function Reports() {
 
   const handlePrint = () => {
     const originalTitle = document.title;
-    // Set a clean document title that acts as the PDF file name
     const reportName = `${timeframe} ${activeTab === 'sales' ? 'Sales' : activeTab === 'purchases' ? 'Purchases' : 'Expiry'} Report`;
     document.title = `${storeSettings.name} - ${reportName.replace(/\b\w/g, c => c.toUpperCase())}`;
     
     window.print();
     
-    // Delay restoring the original title to allow Chrome's print subsystem to capture it
     setTimeout(() => {
       document.title = originalTitle;
     }, 1000);
   };
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}>
+        <span className="spinner"></span>
+      </div>
+    );
+  }
 
   return (
     <div className="animate-in">
@@ -152,26 +263,26 @@ export default function Reports() {
             <>
               <div style={{ flex: 1, border: '1px solid #000', padding: '10px', borderRadius: '4px', textAlign: 'center' }}>
                 <div style={{ fontSize: '10px', textTransform: 'uppercase', color: '#666', fontWeight: 600 }}>Total Revenue Generated</div>
-                <div style={{ fontSize: '20px', fontWeight: 'bold', marginTop: '4px', color: '#000' }}>₹{totalSalesRevenue.toLocaleString()}</div>
+                <div style={{ fontSize: '20px', fontWeight: 'bold', marginTop: '4px', color: '#000' }}>₹{totalSalesRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
               </div>
               <div style={{ flex: 1, border: '1px solid #000', padding: '10px', borderRadius: '4px', textAlign: 'center' }}>
                 <div style={{ fontSize: '10px', textTransform: 'uppercase', color: '#666', fontWeight: 600 }}>Total Cost incurred</div>
-                <div style={{ fontSize: '20px', fontWeight: 'bold', marginTop: '4px', color: '#000' }}>₹{totalSalesCost.toLocaleString()}</div>
+                <div style={{ fontSize: '20px', fontWeight: 'bold', marginTop: '4px', color: '#000' }}>₹{totalSalesCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
               </div>
               <div style={{ flex: 1, border: '2px solid #000', padding: '10px', borderRadius: '4px', textAlign: 'center', background: '#f8fafc' }}>
                 <div style={{ fontSize: '10px', textTransform: 'uppercase', color: '#000', fontWeight: 'bold' }}>Net Operational Profit</div>
-                <div style={{ fontSize: '20px', fontWeight: 'bold', marginTop: '4px', color: '#10b981' }}>₹{totalSalesProfit.toLocaleString()}</div>
+                <div style={{ fontSize: '20px', fontWeight: 'bold', marginTop: '4px', color: '#10b981' }}>₹{totalSalesProfit.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
               </div>
             </>
           ) : activeTab === 'purchases' ? (
             <>
               <div style={{ flex: 1, border: '1px solid #000', padding: '10px', borderRadius: '4px', textAlign: 'center' }}>
                 <div style={{ fontSize: '10px', textTransform: 'uppercase', color: '#666', fontWeight: 600 }}>Total Procurement Expenses</div>
-                <div style={{ fontSize: '20px', fontWeight: 'bold', marginTop: '4px', color: '#000' }}>₹{totalPurchasesExpense.toLocaleString()}</div>
+                <div style={{ fontSize: '20px', fontWeight: 'bold', marginTop: '4px', color: '#000' }}>₹{totalPurchasesExpense.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
               </div>
               <div style={{ flex: 1, border: '1px solid #000', padding: '10px', borderRadius: '4px', textAlign: 'center' }}>
                 <div style={{ fontSize: '10px', textTransform: 'uppercase', color: '#666', fontWeight: 600 }}>Total Quantity Sourced</div>
-                <div style={{ fontSize: '20px', fontWeight: 'bold', marginTop: '4px', color: '#000' }}>{totalPurchasesItems} units</div>
+                <div style={{ fontSize: '20px', fontWeight: 'bold', marginTop: '4px', color: '#000' }}>{totalPurchasesItems} items</div>
               </div>
             </>
           ) : null}
@@ -230,7 +341,7 @@ export default function Reports() {
           <div className="card" style={{ marginBottom: 'var(--space-lg)' }}>
             <div className="card-header">
               <h3 className="card-title">Revenue, Cost & Profit ({timeframe})</h3>
-              <span className="badge badge-info"><Calendar size={12} /> {timeframe === 'monthly' ? 'Last 6 months' : 'This Week'}</span>
+              <span className="badge badge-info"><Calendar size={12} /> {timeframe === 'monthly' ? 'Last Year' : 'Last 7 Days'}</span>
             </div>
             <div className="chart-container">
               <ResponsiveContainer width="100%" height={320}>
@@ -266,17 +377,17 @@ export default function Reports() {
                 {salesData.map((row, i) => (
                   <tr key={i}>
                     <td style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>{row.month}</td>
-                    <td>₹{row.revenue.toLocaleString()}</td>
-                    <td>₹{row.cost.toLocaleString()}</td>
-                    <td style={{ color: 'var(--color-success)', fontWeight: 'bold' }}>₹{row.profit.toLocaleString()}</td>
+                    <td>₹{row.revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                    <td>₹{row.cost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                    <td style={{ color: 'var(--color-success)', fontWeight: 'bold' }}>₹{row.profit.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                   </tr>
                 ))}
                 {/* Accounting Totals Row */}
-                <tr style={{ borderTop: '2px double #000', fontWeight: 'bold', background: '#f8fafc' }}>
-                  <td style={{ color: '#000' }}>TOTAL SUMMARY</td>
-                  <td style={{ color: '#000' }}>₹{totalSalesRevenue.toLocaleString()}</td>
-                  <td style={{ color: '#000' }}>₹{totalSalesCost.toLocaleString()}</td>
-                  <td style={{ color: '#10b981' }}>₹{totalSalesProfit.toLocaleString()}</td>
+                <tr style={{ borderTop: '2px double var(--border-color)', fontWeight: 'bold' }}>
+                  <td>TOTAL SUMMARY</td>
+                  <td>₹{totalSalesRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                  <td>₹{totalSalesCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                  <td style={{ color: '#10b981' }}>₹{totalSalesProfit.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                 </tr>
               </tbody>
             </table>
@@ -292,21 +403,25 @@ export default function Reports() {
                 <tr>
                   <th>#</th>
                   <th>Medicine</th>
-                  <th>Company</th>
                   <th>Units Sold</th>
                   <th>Revenue</th>
                 </tr>
               </thead>
               <tbody>
-                {reportsData.topSellingMedicines.map((med, i) => (
-                  <tr key={i}>
-                    <td>{i + 1}</td>
-                    <td style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{med.name}</td>
-                    <td style={{ fontWeight: 500 }}>{med.company}</td>
-                    <td>{med.units.toLocaleString()}</td>
-                    <td style={{ color: 'var(--accent-primary)', fontWeight: 600 }}>₹{med.revenue.toLocaleString()}</td>
+                {topSellingMeds.length > 0 ? (
+                  topSellingMeds.map((med, i) => (
+                    <tr key={i}>
+                      <td>{i + 1}</td>
+                      <td style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{med.name}</td>
+                      <td>{med.units.toLocaleString()}</td>
+                      <td style={{ color: 'var(--accent-primary)', fontWeight: 600 }}>₹{med.revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="4" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No completed sales records to show.</td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
@@ -319,7 +434,7 @@ export default function Reports() {
           <div className="card" style={{ marginBottom: 'var(--space-lg)' }}>
             <div className="card-header">
               <h3 className="card-title">Purchase Expense Trends ({timeframe})</h3>
-              <span className="badge badge-info"><Calendar size={12} /> {timeframe === 'monthly' ? 'Last 6 months' : 'This Week'}</span>
+              <span className="badge badge-info"><Calendar size={12} /> {timeframe === 'monthly' ? 'Last Year' : 'Last 7 Days'}</span>
             </div>
             <div className="chart-container">
               <ResponsiveContainer width="100%" height={320}>
@@ -352,15 +467,15 @@ export default function Reports() {
                 {purchasesData.map((row, i) => (
                   <tr key={i}>
                     <td style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>{row.month}</td>
-                    <td style={{ color: 'var(--color-warning)', fontWeight: 'bold' }}>₹{row.expense.toLocaleString()}</td>
-                    <td>{row.items} units</td>
+                    <td style={{ color: 'var(--color-warning)', fontWeight: 'bold' }}>₹{row.expense.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                    <td>{row.items} items</td>
                   </tr>
                 ))}
                 {/* Accounting Totals Row */}
-                <tr style={{ borderTop: '2px double #000', fontWeight: 'bold', background: '#f8fafc' }}>
-                  <td style={{ color: '#000' }}>TOTAL SUMMARY</td>
-                  <td style={{ color: '#000' }}>₹{totalPurchasesExpense.toLocaleString()}</td>
-                  <td style={{ color: '#000' }}>{totalPurchasesItems} units</td>
+                <tr style={{ borderTop: '2px double var(--border-color)', fontWeight: 'bold' }}>
+                  <td>TOTAL SUMMARY</td>
+                  <td>₹{totalPurchasesExpense.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                  <td>{totalPurchasesItems} items</td>
                 </tr>
               </tbody>
             </table>
@@ -371,38 +486,39 @@ export default function Reports() {
       {activeTab === 'expiry' && (
         <div className="card">
           <div className="card-header">
-            <h3 className="card-title">Upcoming Expiry Alerts</h3>
-            <span className="badge badge-warning">{reportsData.expiryAlerts.length} items</span>
+            <h3 className="card-title">Stock Status & Low Alerts</h3>
+            <span className="badge badge-warning">{expiryAlerts.length} items</span>
           </div>
           <table className="data-table">
             <thead>
               <tr>
                 <th>Medicine</th>
-                <th>Company</th>
-                <th>Batch No</th>
-                <th>Expiry Date</th>
+                <th>Manufacturer</th>
+                <th>Medicine Code</th>
                 <th>Quantity</th>
                 <th>Status</th>
               </tr>
             </thead>
             <tbody>
-              {reportsData.expiryAlerts.map((item, i) => {
-                const daysLeft = Math.ceil((new Date(item.expiry) - new Date()) / (1000 * 60 * 60 * 24));
-                return (
+              {expiryAlerts.length > 0 ? (
+                expiryAlerts.map((item, i) => (
                   <tr key={i}>
                     <td style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{item.name}</td>
                     <td>{item.company}</td>
                     <td>{item.batch}</td>
-                    <td>{item.expiry}</td>
                     <td>{item.qty}</td>
                     <td>
-                      <span className={`badge ${daysLeft < 45 ? 'badge-danger' : 'badge-warning'}`}>
-                        {daysLeft > 0 ? `${daysLeft} days left` : 'Expired'}
+                      <span className="badge badge-danger">
+                        Low Stock Warning
                       </span>
                     </td>
                   </tr>
-                );
-              })}
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="5" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>All medicine stock levels are healthy!</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
