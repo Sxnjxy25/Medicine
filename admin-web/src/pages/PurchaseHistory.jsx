@@ -153,6 +153,7 @@ export default function PurchaseHistory() {
 
       {showModal && (
         <Modal 
+          open={showModal}
           title={editingPurchase ? 'Edit Purchase Order' : 'Create Purchase Order'} 
           onClose={() => setShowModal(false)}
         >
