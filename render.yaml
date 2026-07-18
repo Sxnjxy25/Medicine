@@ -1,7 +1,6 @@
 databases:
   - name: medistock-db
     databaseName: medistock
-    user: postgres
     plan: free
 
 services:
