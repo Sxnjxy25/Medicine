@@ -1,10 +1,39 @@
+databases:
+  - name: medistock-db
+    databaseName: medistock
+    user: postgres
+    plan: free
+
 services:
   - type: web
     name: medistock
     runtime: docker
     dockerfilePath: ./Dockerfile
+    plan: free
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
       - key: PORT
         value: "8080"
+      - key: DB_HOST
+        fromDatabase:
+          name: medistock-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: medistock-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: medistock-db
+          property: database
+      - key: DATABASE_URL
+        value: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+      - key: DATABASE_USERNAME
+        fromDatabase:
+          name: medistock-db
+          property: user
+      - key: DATABASE_PASSWORD
+        fromDatabase:
+          name: medistock-db
+          property: password
