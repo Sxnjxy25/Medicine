@@ -3,7 +3,7 @@ FROM maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /app
 
 # Copy the backend project
-COPY backend/medistock-backend/ .
+COPY backend/ .
 
 # Build the JAR (skip tests for faster deploy)
 RUN ./mvnw clean package -DskipTests

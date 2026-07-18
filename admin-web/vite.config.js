@@ -13,7 +13,7 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: '../backend/medistock-backend/src/main/resources/static',
+    outDir: '../backend/src/main/resources/static',
     emptyOutDir: true,
   },
 });
