@@ -1,15 +1,18 @@
 # Stage 1: Build the Spring Boot application
-FROM maven:3.9-eclipse-temurin-17 AS build
+FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /app
 
 # Copy the backend project
 COPY backend/ .
 
+# Make the maven wrapper executable
+RUN chmod +x mvnw
+
 # Build the JAR (skip tests for faster deploy)
 RUN ./mvnw clean package -DskipTests
 
 # Stage 2: Run the application
-FROM eclipse-temurin:17-jre
+FROM eclipse-temurin:21-jre
 WORKDIR /app
 
 # Copy the built JAR from the build stage
