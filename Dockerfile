@@ -5,8 +5,8 @@ WORKDIR /app
 # Copy the backend project
 COPY backend/ .
 
-# Make the maven wrapper executable
-RUN chmod +x mvnw
+# Make the maven wrapper executable and fix CRLF line endings
+RUN sed -i 's/\r$//' mvnw && chmod +x mvnw
 
 # Build the JAR (skip tests for faster deploy)
 RUN ./mvnw clean package -DskipTests
@@ -16,7 +16,7 @@ FROM eclipse-temurin:21-jre
 WORKDIR /app
 
 # Copy the built JAR from the build stage
-COPY --from=build /app/target/*.jar app.jar
+COPY --from=build /app/target/medistock-backend-0.0.1-SNAPSHOT.jar app.jar
 
 # Expose the port Render will use
 EXPOSE 8080
