@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Search, Bell, LogOut, Sun, Moon } from 'lucide-react';
+import { Search, Bell, LogOut, Sun, Moon, Menu, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import medicineService from '../services/medicineService';
 
@@ -15,7 +15,7 @@ const pageTitles = {
   '/settings': 'Settings',
 };
 
-export default function Navbar({ collapsed }) {
+export default function Navbar({ collapsed, onToggleMobile, mobileOpen }) {
   const location = useLocation();
   const { user, logout } = useAuth();
 
@@ -69,6 +69,13 @@ export default function Navbar({ collapsed }) {
   return (
     <header className={`navbar ${collapsed ? 'collapsed' : ''}`}>
       <div className="navbar-left">
+        <button 
+          className="mobile-menu-btn"
+          onClick={onToggleMobile}
+          title="Toggle menu"
+        >
+          {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+        </button>
         <h2 className="navbar-title">{title}</h2>
       </div>
 

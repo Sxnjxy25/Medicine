@@ -27,7 +27,7 @@ const navItems = [
   { path: '/settings', label: 'Settings', icon: Settings },
 ];
 
-export default function Sidebar({ collapsed, onToggle }) {
+export default function Sidebar({ collapsed, onToggle, mobileOpen, onClose }) {
   const location = useLocation();
   const { user } = useAuth();
 
@@ -52,7 +52,7 @@ export default function Sidebar({ collapsed, onToggle }) {
   });
 
   return (
-    <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
+    <aside className={`sidebar ${collapsed ? 'collapsed' : ''} ${mobileOpen ? 'mobile-open' : ''}`}>
       <div className="sidebar-header">
         <div className="sidebar-logo">💊</div>
         <div className="sidebar-brand">
@@ -80,6 +80,7 @@ export default function Sidebar({ collapsed, onToggle }) {
               key={item.path}
               to={item.path}
               className={`nav-link ${isActive ? 'active' : ''}`}
+              onClick={onClose}
             >
               <Icon size={20} className="nav-link-icon" />
               <span>{item.label}</span>

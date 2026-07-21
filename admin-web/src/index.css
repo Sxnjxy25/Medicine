@@ -1389,21 +1389,230 @@ input, select, textarea {
   }
 }
 
+/* --- Hide hamburger on desktop --- */
+.mobile-menu-btn {
+  display: none;
+}
+
 @media (max-width: 768px) {
+  /* --- Mobile Menu Button --- */
+  .mobile-menu-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+    flex-shrink: 0;
+  }
+
+  .mobile-menu-btn:hover {
+    background: var(--bg-surface-hover);
+  }
+
+  /* --- Sidebar as Drawer --- */
   .sidebar {
     transform: translateX(-100%);
+    transition: transform var(--transition-slow);
+    box-shadow: none;
   }
+
   .sidebar.mobile-open {
     transform: translateX(0);
+    box-shadow: var(--shadow-lg);
   }
-  .main-wrapper {
+
+  /* Hide collapse toggle on mobile (we use the hamburger instead) */
+  .sidebar-toggle {
+    display: none;
+  }
+
+  /* --- Main Wrapper full width --- */
+  .main-wrapper,
+  .main-wrapper.collapsed {
     margin-left: 0 !important;
   }
-  .navbar {
+
+  /* --- Navbar full width --- */
+  .navbar,
+  .navbar.collapsed {
     left: 0 !important;
   }
+
+  .navbar {
+    padding: 0 var(--space-md);
+  }
+
+  .navbar-title {
+    font-size: var(--font-size-md) !important;
+  }
+
+  /* --- Navbar Right: prevent overflow --- */
+  .navbar-right {
+    gap: var(--space-xs);
+  }
+
+  .navbar-right > div:last-child {
+    gap: 4px !important;
+    margin-left: var(--space-xs) !important;
+  }
+
+  /* Hide username/role text on mobile - show only avatar */
+  .navbar-right > div:last-child > div:first-child {
+    display: none !important;
+  }
+
+  .navbar-icon-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .navbar-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: var(--font-size-xs);
+  }
+
+  /* --- Main Content spacing --- */
+  .main-content {
+    padding: var(--space-md);
+    padding-top: calc(var(--navbar-height) + var(--space-md));
+  }
+
+  /* --- Stat Cards: stack vertically --- */
   .stat-cards {
     grid-template-columns: 1fr;
+  }
+
+  /* --- Data Table: horizontal scroll --- */
+  .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .data-table {
+    min-width: 600px;
+  }
+
+  .table-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-sm);
+    padding: var(--space-md);
+  }
+
+  .table-search {
+    width: 100%;
+  }
+
+  .table-pagination {
+    flex-direction: column;
+    gap: var(--space-sm);
+    align-items: center;
+    padding: var(--space-md);
+  }
+
+  /* --- Billing: stack layout --- */
+  .billing-layout {
+    grid-template-columns: 1fr;
+  }
+
+  /* --- Settings: stack layout --- */
+  .settings-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: var(--space-xs);
+    padding-bottom: var(--space-sm);
+  }
+
+  .settings-nav-item {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* --- Form Grid: single column --- */
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* --- Notification Dropdown: fit mobile screen --- */
+  .navbar-right > div > div[style*="position: absolute"] {
+    width: calc(100vw - 32px) !important;
+    right: -60px !important;
+  }
+
+  /* --- Login Card --- */
+  .login-card {
+    margin: var(--space-md);
+    padding: var(--space-lg);
+  }
+
+  /* --- Dashboard grids --- */
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-grid-full {
+    grid-template-columns: 1fr;
+  }
+
+  /* --- Toast: full width on mobile --- */
+  .toast-container {
+    left: var(--space-md);
+    right: var(--space-md);
+    top: var(--space-md);
+  }
+
+  .toast {
+    min-width: auto;
+    width: 100%;
+  }
+
+  /* --- Modal: better mobile sizing --- */
+  .modal {
+    margin: var(--space-md);
+    max-width: calc(100vw - 32px);
+    padding: var(--space-lg);
+  }
+}
+
+
+/* --- Extra small phones --- */
+@media (max-width: 480px) {
+  .stat-value {
+    font-size: var(--font-size-xl);
+  }
+
+  .stat-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .navbar-title {
+    font-size: var(--font-size-base) !important;
+  }
+
+  .main-content {
+    padding: var(--space-sm);
+    padding-top: calc(var(--navbar-height) + var(--space-sm));
+  }
+
+  .card {
+    padding: var(--space-md);
+  }
+
+  .btn-lg {
+    padding: var(--space-sm) var(--space-md);
+    font-size: var(--font-size-sm);
   }
 }
 
